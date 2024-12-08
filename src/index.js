@@ -14,7 +14,6 @@ const userMessageData = {};
 let saveQueue = {};
 let databaseLocks = {};
 
-// Utility to check if the JSON data is valid
 function isValidJson(data) {
     try {
         JSON.stringify(data);
@@ -24,7 +23,6 @@ function isValidJson(data) {
     }
 }
 
-// Sanitize database to remove only invalid parts while keeping valid data intact
 async function sanitizeDatabase(data) {
     const validData = {};
     for (const [key, value] of Object.entries(data)) {
@@ -37,7 +35,6 @@ async function sanitizeDatabase(data) {
     return validData;
 }
 
-// Function to try and repair corrupted JSON structure
 function repairJsonStructure(rawContent) {
     const repairedData = {};
     let currentChunk = '';
@@ -68,7 +65,6 @@ function repairJsonStructure(rawContent) {
     return repairedData;
 }
 
-// Function to load the database with added recovery mechanism
 async function loadDatabase(filePath) {
     while (databaseLocks[filePath]) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -77,17 +73,16 @@ async function loadDatabase(filePath) {
     try {
         const data = await fs.readFile(filePath, 'utf8');
         const parsedData = JSON.parse(data);
-        return await sanitizeDatabase(parsedData); // Sanitize if parsing works
+        return await sanitizeDatabase(parsedData);
     } catch (error) {
         if (error.code === 'ENOENT') {
             console.warn(`File not found: ${filePath}, initializing an empty object.`);
-            await saveDatabase(filePath, {});  // Initialize with an empty object
+            await saveDatabase(filePath, {});
             return {};
         } else {
             console.warn(`Failed to parse or load JSON completely: ${error.message}`);
         }
 
-        // Attempt to recover valid parts from chunks if the file is partially corrupted
         console.log('Attempting to repair the broken JSON structure...');
         const repairedData = repairJsonStructure(data);
         return repairedData;
@@ -95,12 +90,10 @@ async function loadDatabase(filePath) {
 }
 
 
-// Validate data before saving
 async function validateAndAssembleData(data) {
-    // Allow saving an empty userDatabase if this is part of the initialization
     if (data && Object.keys(data).length === 0) {
         console.warn('Data is empty but allowed for initialization.');
-        return true; // Allow empty data during initialization
+        return true;
     }
 
     if (!data || Object.keys(data).length === 0) {
@@ -110,8 +103,6 @@ async function validateAndAssembleData(data) {
     return true;
 }
 
-
-// Save the database with sanitization and validation
 async function saveDatabase(filePath, data) {
     if (!saveQueue[filePath]) {
         saveQueue[filePath] = [];
@@ -135,7 +126,7 @@ async function saveDatabase(filePath, data) {
                 const sanitizedData = await sanitizeDatabase(data);
                 const jsonData = JSON.stringify(sanitizedData, null, 2);
 
-                await fs.writeFile(filePath, jsonData, 'utf8');  // Updated to use fs
+                await fs.writeFile(filePath, jsonData, 'utf8');
                 resolve();
             } catch (error) {
                 console.error(`Failed to save database file ${filePath}: ${error.message}`);
@@ -159,7 +150,6 @@ async function initializeDatabase(guildId) {
     try {
         const dbPath = path.join(__dirname, '..', 'databases', guildId);
 
-        // Ensure the directory exists using fs
         if (!(await fs.pathExists(dbPath))) {
             console.log(`Creating directory for guild ${guildId}: ${dbPath}`);
             await fs.ensureDir(dbPath);
@@ -616,8 +606,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
                         ],
                     });
                 }
-
-                // Reset cooldown
                 streakCooldowns.set(userId, now);
             }
         }
@@ -854,13 +842,12 @@ function scheduleDailyReset() {
 }
 
 function scheduleMessageLeaderAnnounce() {
-    cron.schedule('0 0 * * 0', () => {
+    cron.schedule('0 18 * * 0', () => {
         console.log('Running weekly message leader announcement at 12 AM on Sunday');
         announceMessageLeaders();
     });
 }
 
-// Announce message leaders
 async function announceMessageLeaders() {
     try {
         const guilds = client.guilds.cache.map(guild => guild.id);
@@ -926,14 +913,14 @@ async function announceMessageLeaders() {
                     continue;
                 }
 
-                let messageContent = `What's up members of ${guildName} server! Here are the Message Leaders for last week!! 🔥 🎉\n\n`;
-                messageContent += `1st  🏆 : <@${messageLeaders[0]?.[0] || ''}> (${top10Users[0]?.tag || 'N/A'})\n`;
-                messageContent += `2nd :  <@${messageLeaders[1]?.[0] || ''}> (${top10Users[1]?.tag || 'N/A'})\n`;
-                messageContent += `3rd :  <@${messageLeaders[2]?.[0] || ''}> (${top10Users[2]?.tag || 'N/A'})\n`;
-                messageContent += `4th : <@${messageLeaders[3]?.[0] || ''}> (${top10Users[3]?.tag || 'N/A'})\n`;
-                messageContent += `5th : <@${messageLeaders[4]?.[0] || ''}> (${top10Users[4]?.tag || 'N/A'})\n`;
-                messageContent += `6-10th: ${messageLeaders.slice(5).map(([userId], index) => `<@${userId}> (${top10Users[index + 5]?.tag || 'N/A'})`).join(', ')}\n\n`;
-                messageContent += `Congratulations to everyone, and thanks to those who participated!`;
+                let messageContent = `🎉 **Message Leaders for last week in ${guildName}!** 🔥\n\n`;
+                messageContent += `🏆 1st: <@${messageLeaders[0]?.[0] || ''}> (${top10Users[0]?.tag || 'N/A'})\n`;
+                messageContent += `🥈 2nd: <@${messageLeaders[1]?.[0] || ''}> (${top10Users[1]?.tag || 'N/A'})\n`;
+                messageContent += `🥉 3rd: <@${messageLeaders[2]?.[0] || ''}> (${top10Users[2]?.tag || 'N/A'})\n`;
+                messageContent += `🎖️ 4th: <@${messageLeaders[3]?.[0] || ''}> (${top10Users[3]?.tag || 'N/A'})\n`;
+                messageContent += `🎖️ 5th: <@${messageLeaders[4]?.[0] || ''}> (${top10Users[4]?.tag || 'N/A'})\n`;
+                messageContent += `📜 6th-10th: ${messageLeaders.slice(5).map(([userId], index) => `<@${userId}> (${top10Users[index + 5]?.tag || 'N/A'})`).join(', ')}\n\n`;
+                messageContent += `Congratulations to everyone who participated!`;
 
                 try {
                     await messageLeaderChannel.send({
@@ -944,6 +931,40 @@ async function announceMessageLeaders() {
                     console.error(`Failed to send message leaders to guild ${guildId}: ${error.message}`);
                 }
 
+                // Assign the Message Leader role to the top 5 users
+                const leaderRoleId = config.messageLeaderSystem.roleMessageLeader;
+                if (leaderRoleId) {
+                    const leaderRole = client.guilds.cache.get(guildId).roles.cache.get(leaderRoleId);
+
+                    if (leaderRole) {
+                        // Remove the role from all members to reset for new leaders
+                        for (const member of leaderRole.members.values()) {
+                            try {
+                                await member.roles.remove(leaderRole);
+                            } catch (error) {
+                                console.error(`Failed to remove leader role from ${member.user.tag} in guild ${guildId}: ${error.message}`);
+                            }
+                        }
+
+                        // Add the role to the top 5 message leaders
+                        for (let i = 0; i < 5; i++) {
+                            const userId = messageLeaders[i]?.[0];
+                            if (userId) {
+                                try {
+                                    await assignRole(guildId, userId, leaderRoleId);
+                                } catch (error) {
+                                    console.error(`Failed to assign leader role to user ${userId} in guild ${guildId}: ${error.message}`);
+                                }
+                            }
+                        }
+                    } else {
+                        console.error(`Leader role ID ${leaderRoleId} not found in guild ${guildId}`);
+                    }
+                } else {
+                    console.warn(`No leader role configured for guild ${guildId}`);
+                }
+
+                // Update message counts and wins
                 for (let i = 0; i < 5; i++) {
                     const userId = messageLeaders[i]?.[0];
                     if (userId) {
@@ -951,6 +972,7 @@ async function announceMessageLeaders() {
                     }
                 }
 
+                // Reset message counts for all users
                 for (const userId in userDatabase) {
                     userDatabase[userId].messages = 0;
                 }

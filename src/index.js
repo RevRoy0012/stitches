@@ -913,14 +913,27 @@ async function announceMessageLeaders() {
                     continue;
                 }
 
-                let messageContent = `🎉 **Message Leaders for last week in ${guildName}!** 🔥\n\n`;
-                messageContent += `🏆 1st: <@${messageLeaders[0]?.[0] || ''}> (${top10Users[0]?.tag || 'N/A'})\n`;
-                messageContent += `🥈 2nd: <@${messageLeaders[1]?.[0] || ''}> (${top10Users[1]?.tag || 'N/A'})\n`;
-                messageContent += `🥉 3rd: <@${messageLeaders[2]?.[0] || ''}> (${top10Users[2]?.tag || 'N/A'})\n`;
-                messageContent += `🎖️ 4th: <@${messageLeaders[3]?.[0] || ''}> (${top10Users[3]?.tag || 'N/A'})\n`;
-                messageContent += `🎖️ 5th: <@${messageLeaders[4]?.[0] || ''}> (${top10Users[4]?.tag || 'N/A'})\n`;
-                messageContent += `📜 6th-10th: ${messageLeaders.slice(5).map(([userId], index) => `<@${userId}> (${top10Users[index + 5]?.tag || 'N/A'})`).join(', ')}\n\n`;
-                messageContent += `Congratulations to everyone who participated!`;
+                let messageContent = '';
+
+                if (config.streakSystem?.isGymClassServer) {
+                    messageContent = `Whats up Gym Class!! Here are the Message Leader winners for last week!! 💪🔥\n\n`;
+                    messageContent += `🏆 1st: <@${messageLeaders[0]?.[0] || ''}> (${top10Users[0]?.tag || 'N/A'})\n`;
+                    messageContent += `🥈 2nd: <@${messageLeaders[1]?.[0] || ''}> (${top10Users[1]?.tag || 'N/A'})\n`;
+                    messageContent += `🥉 3rd: <@${messageLeaders[2]?.[0] || ''}> (${top10Users[2]?.tag || 'N/A'})\n`;
+                    messageContent += `💪 4th: <@${messageLeaders[3]?.[0] || ''}> (${top10Users[3]?.tag || 'N/A'})\n`;
+                    messageContent += `🔥 5th: <@${messageLeaders[4]?.[0] || ''}> (${top10Users[4]?.tag || 'N/A'})\n`;
+                    messageContent += `📜 (6th-10th): ${messageLeaders.slice(5).map(([userId], index) => `<@${userId}> (${top10Users[index + 5]?.tag || 'N/A'})`).join(', ')}\n\n`;
+                    messageContent += `**To those who have the message leader role this week, to claim your hat, please use the /claim_role command in https://discord.com/channels/752216589792706621/879142306932981800 channel!**`;
+                } else {
+                    messageContent = `🎉 **Message Leaders for last week in ${guildName}!** 🔥\n\n`;
+                    messageContent += `🏆 1st: <@${messageLeaders[0]?.[0] || ''}> (${top10Users[0]?.tag || 'N/A'})\n`;
+                    messageContent += `🥈 2nd: <@${messageLeaders[1]?.[0] || ''}> (${top10Users[1]?.tag || 'N/A'})\n`;
+                    messageContent += `🥉 3rd: <@${messageLeaders[2]?.[0] || ''}> (${top10Users[2]?.tag || 'N/A'})\n`;
+                    messageContent += `🎖️ 4th: <@${messageLeaders[3]?.[0] || ''}> (${top10Users[3]?.tag || 'N/A'})\n`;
+                    messageContent += `🎖️ 5th: <@${messageLeaders[4]?.[0] || ''}> (${top10Users[4]?.tag || 'N/A'})\n`;
+                    messageContent += `📜 6th-10th: ${messageLeaders.slice(5).map(([userId], index) => `<@${userId}> (${top10Users[index + 5]?.tag || 'N/A'})`).join(', ')}\n\n`;
+                    messageContent += `Congratulations to everyone who participated!`;
+                }
 
                 try {
                     await messageLeaderChannel.send({

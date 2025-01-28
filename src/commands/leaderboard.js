@@ -3,7 +3,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const canvafy = require('canvafy');
 
-// Utility function to safely read and parse JSON files
 const readJsonFile = (filePath) => {
     try {
         const data = fs.readFileSync(filePath, 'utf8');
@@ -14,7 +13,6 @@ const readJsonFile = (filePath) => {
     }
 };
 
-// Utility function to get the paths for the database and config files for a guild
 const getDatabasePath = (guildId, fileName) => path.join(__dirname, '..', '..', 'databases', guildId, fileName);
 
 module.exports = {

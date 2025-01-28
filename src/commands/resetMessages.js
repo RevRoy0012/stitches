@@ -19,7 +19,6 @@ module.exports = {
                 .setName('server')
                 .setDescription('Reset message counts for all users in the server.')),
     async execute(interaction) {
-        // Check if the user has the required permissions
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
             return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
         }
@@ -28,7 +27,6 @@ module.exports = {
         const userDbPath = path.join(__dirname, '..', '..', 'databases', guildId, 'userDatabase.json');
 
         try {
-            // Load the user database
             const userDatabase = await loadUserDatabase(userDbPath);
 
             if (interaction.options.getSubcommand() === 'user') {
@@ -49,7 +47,6 @@ module.exports = {
     },
 };
 
-// Function to load the user database
 async function loadUserDatabase(userDbPath) {
     if (await fs.pathExists(userDbPath)) {
         return fs.readJson(userDbPath);
@@ -58,7 +55,6 @@ async function loadUserDatabase(userDbPath) {
     }
 }
 
-// Function to reset messages for a specific user
 async function resetUserMessages(userId, userDatabase, userDbPath) {
     if (userDatabase[userId]) {
         userDatabase[userId].messages = 0;
@@ -71,7 +67,6 @@ async function resetUserMessages(userId, userDatabase, userDbPath) {
     }
 }
 
-// Function to reset messages for all users in the server
 async function resetServerMessages(userDatabase, userDbPath) {
     for (const userId in userDatabase) {
         userDatabase[userId].messages = 0;
@@ -82,7 +77,6 @@ async function resetServerMessages(userDatabase, userDbPath) {
     await saveUserDatabase(userDbPath, userDatabase);
 }
 
-// Function to save the user database
 async function saveUserDatabase(userDbPath, userDatabase) {
     await fs.writeJson(userDbPath, userDatabase, { spaces: 2 });
 }

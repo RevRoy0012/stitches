@@ -3,7 +3,6 @@ const { PermissionsBitField } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// Define the project root path
 const projectRoot = path.join(__dirname, '..', '..');
 
 module.exports = {
@@ -33,7 +32,6 @@ module.exports = {
 
     async execute(interaction) {
         try {
-            // Check for "Manage Server" permissions
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
                 return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
             }
@@ -51,16 +49,14 @@ module.exports = {
             let userDatabase;
             let config;
 
-            // Ensure database and config exist
             try {
-                await fs.promises.access(userDbPath, fs.constants.F_OK); // Check if the file exists
+                await fs.promises.access(userDbPath, fs.constants.F_OK);
                 userDatabase = await fs.promises.readFile(userDbPath, 'utf-8').then(JSON.parse);
                 config = await fs.promises.readFile(configPath, 'utf-8').then(JSON.parse);
             } catch (err) {
                 return interaction.reply({ content: 'No user data found for this guild.', ephemeral: true });
             }
 
-            // Check if user exists in the database and initialize if missing
             if (!userDatabase[targetUserId]) {
                 userDatabase[targetUserId] = {
                     messages: 0,
@@ -76,7 +72,7 @@ module.exports = {
                 console.log(`User ${targetUser.username} was not found in the database and was initialized.`);
             }
 
-            // Validate input fields
+
             switch (field) {
                 case 'messages':
                 case 'streak':
@@ -102,7 +98,6 @@ module.exports = {
                     return interaction.reply({ content: 'Invalid field specified.', ephemeral: true });
             }
 
-            // Process the update
             switch (field) {
                 case 'messages':
                     userDatabase[targetUserId].messages = parseInt(value, 10);
@@ -112,15 +107,12 @@ module.exports = {
                     const oldStreak = userDatabase[targetUserId].streak;
                     userDatabase[targetUserId].streak = newStreak;
 
-                    // Update highestStreak if the new streak exceeds the highest streak
                     if (newStreak > userDatabase[targetUserId].highestStreak) {
                         userDatabase[targetUserId].highestStreak = newStreak;
                     }
 
-                    // Log streak update
                     console.log(`Streak for user ${targetUser.username} updated from ${oldStreak} to ${newStreak}.`);
 
-                    // Handle role assignments for streaks
                     if (oldStreak > 0) {
                         const oldStreakRoleKey = `role${oldStreak}day`;
                         const oldStreakRole = config.streakSystem[oldStreakRoleKey];
@@ -140,7 +132,7 @@ module.exports = {
 
                 case 'threshold':
                     userDatabase[targetUserId].threshold = parseInt(value, 10);
-                    userDatabase[targetUserId].receivedDaily = false; // Reset receivedDaily when threshold is updated
+                    userDatabase[targetUserId].receivedDaily = false;
                     console.log(`Threshold for user ${targetUser.username} updated to ${value} and receivedDaily set to false.`);
                     break;
 
@@ -157,11 +149,9 @@ module.exports = {
                     const oldLevel = userDatabase[targetUserId].experience.level;
                     userDatabase[targetUserId].experience.level = newLevel;
 
-                    // Cap XP to ensure it doesn't exceed the required amount for the next level
                     const xpRequired = Math.floor(100 * Math.pow(config.levelSystem.levelMultiplier, newLevel));
                     userDatabase[targetUserId].experience.totalXp = Math.min(userDatabase[targetUserId].experience.totalXp, xpRequired - 1);
 
-                    // Handle role assignments for levels
                     if (oldLevel > 0) {
                         const oldLevelRoleKey = `roleLevel${oldLevel}`;
                         const oldLevelRole = config.levelSystem[oldLevelRoleKey];
@@ -191,10 +181,8 @@ module.exports = {
                     return interaction.reply({ content: 'Invalid field specified.', ephemeral: true });
             }
 
-            // Log before saving
             console.log(`Final user data for ${targetUser.username}:`, userDatabase[targetUserId]);
 
-            // Save the updated user database
             await fs.promises.writeFile(userDbPath, JSON.stringify(userDatabase, null, 2), 'utf-8');
             await interaction.reply({ content: `Successfully updated ${field} for ${targetUser.username}.`, ephemeral: true });
         } catch (error) {
@@ -206,7 +194,6 @@ module.exports = {
     }
 };
 
-// Helper function to assign a role
 async function assignRole(client, guildId, userId, roleId) {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return;
@@ -223,7 +210,6 @@ async function assignRole(client, guildId, userId, roleId) {
     }
 }
 
-// Helper function to remove a role
 async function removeRole(client, guildId, userId, roleId) {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return;

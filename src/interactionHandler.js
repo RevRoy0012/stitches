@@ -7,7 +7,6 @@ const cooldowns = new Collection();
 
 module.exports = async (client, interaction) => {
     try {
-        // Handle slash commands
         if (interaction.isCommand()) {
             const command = client.commands.get(interaction.commandName);
 
@@ -18,7 +17,6 @@ module.exports = async (client, interaction) => {
                 });
             }
 
-            // Cooldown logic
             const now = Date.now();
             const cooldownAmount = 3000;
             const timestamps = cooldowns.get(interaction.user.id);
@@ -37,7 +35,6 @@ module.exports = async (client, interaction) => {
             cooldowns.set(interaction.user.id, now);
             setTimeout(() => cooldowns.delete(interaction.user.id), cooldownAmount);
 
-            // Command execution with error handling
             try {
                 await command.execute(interaction);
             } catch (error) {
@@ -45,7 +42,6 @@ module.exports = async (client, interaction) => {
                 handleInteractionError(interaction, 'There was an error while executing this command!');
             }
         }
-        // Handle select menu interactions
         else if (interaction.isStringSelectMenu()) {
             const { guild, customId } = interaction;
 
@@ -56,11 +52,9 @@ module.exports = async (client, interaction) => {
                 });
             }
 
-            // Define paths to your databases and config files
             const configPath = path.join(__dirname, '..', 'databases', `${guild.id}`, 'config.json');
             let config = {};
 
-            // Check if the config exists and read it
             try {
                 await fs.promises.access(configPath, fs.constants.F_OK);
                 config = await fs.promises.readFile(configPath, 'utf-8').then(JSON.parse);
@@ -71,10 +65,8 @@ module.exports = async (client, interaction) => {
                 });
             }
 
-            // Ensure config structure is correct
             ensureConfigStructure(config);
 
-            // Handle specific select menu interactions
             try {
                 if (customId === 'system-select') {
                     await handleSystemSelect(interaction, config);
@@ -103,7 +95,6 @@ module.exports = async (client, interaction) => {
     }
 };
 
-// Helper function to handle interaction errors gracefully
 async function handleInteractionError(interaction, errorMessage) {
     try {
         if (!interaction.replied && !interaction.deferred) {
@@ -121,7 +112,6 @@ async function handleInteractionError(interaction, errorMessage) {
     }
 }
 
-// Ensure the config structure is valid to avoid issues with missing properties
 function ensureConfigStructure(config) {
     if (!config.streakSystem) {
         config.streakSystem = {
@@ -153,7 +143,6 @@ function ensureConfigStructure(config) {
     }
 }
 
-// Handle system selection menu
 async function handleSystemSelect(interaction) {
     const system = interaction.values[0];
     let menu, content;
@@ -214,7 +203,6 @@ async function handleSystemSelect(interaction) {
     await interaction.update({ content, components: [row] });
 }
 
-// Handle streak system options
 async function handleStreakOptions(interaction, config, guild, configPath) {
     const option = interaction.values[0];
 
@@ -241,7 +229,6 @@ async function handleStreakOptions(interaction, config, guild, configPath) {
     }
 }
 
-// Handle message leader system options
 async function handleLeaderOptions(interaction, config, guild, configPath) {
     const option = interaction.values[0];
 
@@ -261,7 +248,6 @@ async function handleLeaderOptions(interaction, config, guild, configPath) {
     }
 }
 
-// Handle level system options
 async function handleLevelOptions(interaction, config, guild, configPath) {
     const option = interaction.values[0];
 
@@ -290,7 +276,6 @@ async function handleLevelOptions(interaction, config, guild, configPath) {
     }
 }
 
-// Handle report system options
 async function handleReportOptions(interaction, config, guild, configPath) {
     const option = interaction.values[0];
 
@@ -307,7 +292,6 @@ async function handleReportOptions(interaction, config, guild, configPath) {
 }
 
 
-// Helper functions for setting channels, roles, and thresholds
 async function setChannel(interaction, guild, config, configPath, configKey, description) {
     await interaction.deferReply({ ephemeral: true });
     await interaction.followUp({ content: `Please mention the channel for ${description} (e.g., #channel-name):` });
@@ -322,7 +306,6 @@ async function setChannel(interaction, guild, config, configPath, configKey, des
         if (!channel || !channel.isTextBased()) {
             await interaction.followUp({ content: 'Please mention a valid text channel.', ephemeral: true });
         } else {
-            // Use lodash.set to safely set nested keys
             set(config, configKey, channel.id);
             await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
             await interaction.followUp({ content: `${description} has been set to ${channel.name}.`, ephemeral: true });
@@ -350,7 +333,6 @@ async function setThreshold(interaction, config, configPath, configKey, descript
         if (isNaN(value) || value <= 0) {
             await interaction.followUp({ content: 'Please provide a valid number.', ephemeral: true });
         } else {
-            // Use lodash.set to safely set nested keys
             set(config, configKey, value);
             await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
             await interaction.followUp({ content: `${description} has been set to ${value}.`, ephemeral: true });
@@ -378,7 +360,6 @@ async function setRole(interaction, guild, config, configPath, configKey, descri
         if (!role) {
             await interaction.followUp({ content: 'Please mention a valid role.', ephemeral: true });
         } else {
-            // Use lodash.set to safely set nested keys
             set(config, configKey, role.id);
             await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
             await interaction.followUp({ content: `${description} has been set to ${role.name}.`, ephemeral: true });
@@ -412,7 +393,7 @@ async function addMilestone(interaction, guild, config, configPath, systemType) 
             if (!milestoneRole) {
                 milestoneRole = await guild.roles.create({
                     name: roleName,
-                    color: '#00FF00', // Green color for streak/level roles
+                    color: '#00FF00',
                     reason: `Role for users with a ${milestone}-day streak or reaching Level ${milestone}`,
                 });
             }
@@ -420,7 +401,6 @@ async function addMilestone(interaction, guild, config, configPath, systemType) 
             config[systemType === 'streak' ? `streakSystem` : `levelSystem`][`role${milestone}${systemType === 'streak' ? 'day' : ''}`] = milestoneRole.id;
             await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
 
-            // Assign the milestone role to existing users
             const userDbPath = path.join(__dirname, '..', 'databases', guild.id, 'userDatabase.json');
             let userDatabase = {};
 

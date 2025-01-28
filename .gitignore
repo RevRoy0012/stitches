@@ -1,4 +1,2 @@
-/databases
-/node_modules
-/src.zip
-/.idea
+.idea
+node_modules

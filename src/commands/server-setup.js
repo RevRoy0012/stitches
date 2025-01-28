@@ -19,7 +19,6 @@ module.exports = {
         ),
     async execute(interaction) {
         try {
-            // Check if the user has the "Manage Server" permission
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
                 return interaction.reply({
                     content: 'You do not have permission to use this command. You need "Manage Server" permission to use it.',
@@ -27,22 +26,18 @@ module.exports = {
                 });
             }
 
-            // Defer the reply immediately to avoid InteractionNotReplied errors
             await interaction.deferReply({ ephemeral: true });
 
             const guild = interaction.guild;
             const selectedSystem = interaction.options.getString('system');
             const configPath = path.join(__dirname, '..', '..', 'databases', guild.id, 'config.json');
 
-            // Load or initialize the config
             let config = await loadConfig(configPath);
 
-            // Ensure the config structure is correct to avoid undefined properties
             ensureConfigStructure(config);
 
             let category = await getOrCreateCategory(guild, 'Engagement');
 
-            // Setup the selected systems
             if (selectedSystem === 'streak-system' || selectedSystem === 'all-systems') {
                 await setupStreakSystem(guild, category, config);
             }
@@ -55,15 +50,12 @@ module.exports = {
                 await setupLevelSystem(guild, category, config);
             }
 
-            // Save the updated config
             await saveConfig(configPath, config);
 
-            // Edit the deferred reply to indicate success
             await interaction.editReply(`Bot setup completed successfully! The following system(s) have been configured: ${selectedSystem.replace('-', ' ')}`);
         } catch (error) {
             console.error(`Error executing command setup-bot: ${error.message}`);
 
-            // Handle errors and ensure we're only replying once
             if (interaction.deferred) {
                 await interaction.editReply({
                     content: 'An error occurred during setup. Please try again later.'
@@ -73,7 +65,6 @@ module.exports = {
     },
 };
 
-// Helper functions
 async function loadConfig(configPath) {
     if (await fs.pathExists(configPath)) {
         return fs.readJson(configPath);
@@ -180,7 +171,6 @@ async function getOrCreateRole(guild, roleName, roleColor) {
     return role;
 }
 
-// Ensure config structure
 function ensureConfigStructure(config) {
     config.streakSystem = config.streakSystem || {};
     config.messageLeaderSystem = config.messageLeaderSystem || {};

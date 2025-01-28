@@ -6,7 +6,6 @@ module.exports = {
         .setDescription('Configure the streak system, message leader system, or level system.'),
     async execute(interaction) {
         try {
-            // Check if the user has the "Manage Server" permission
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
                 return await interaction.reply({
                     content: 'You do not have permission to use this command.',

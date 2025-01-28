@@ -38,7 +38,6 @@ module.exports = {
         let currentPage = 0;
 
         try {
-            // Defer reply early
             await interaction.deferReply({ ephemeral: true });
 
             const profileEmbed = await interaction.editReply({
@@ -92,7 +91,6 @@ function generateProfilePages(user, userData, guild, config) {
 
     const sections = [];
 
-    // Streak Information
     if (config.streakSystem?.enabled) {
         sections.push({
             title: 'Streak Information',
@@ -108,7 +106,6 @@ function generateProfilePages(user, userData, guild, config) {
         });
     }
 
-    // Achievements
     if (userData.milestones.length || userData.rolesAchieved.length) {
         sections.push({
             title: 'Achievements',
@@ -120,7 +117,6 @@ function generateProfilePages(user, userData, guild, config) {
         });
     }
 
-    // Message Leader Wins
     if (config.messageLeaderSystem?.enabled) {
         sections.push({
             title: 'Message Leader Wins',
@@ -131,7 +127,6 @@ function generateProfilePages(user, userData, guild, config) {
         });
     }
 
-    // Level and XP
     if (config.levelSystem?.enabled) {
         sections.push({
             title: 'Level and XP',
@@ -143,7 +138,6 @@ function generateProfilePages(user, userData, guild, config) {
         });
     }
 
-    // Message Activity
     sections.push({
         title: 'Message Activity',
         fields: [
@@ -153,7 +147,6 @@ function generateProfilePages(user, userData, guild, config) {
         ],
     });
 
-    // Loop through sections and create separate pages
     sections.forEach(section => {
         const embed = new EmbedBuilder(baseEmbed);
         embed.setDescription(`**${section.title}**`);

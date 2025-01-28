@@ -179,9 +179,8 @@ async function initializeDatabase(guildId) {
                 roles: {},
             };
 
-            const initialUserDatabase = {}; // Initialize as an empty object
+            const initialUserDatabase = {};
 
-            // Save both the config and user database, allowing empty user database initialization
             await saveDatabase(path.join(dbPath, 'config.json'), initialConfig);
             await saveDatabase(path.join(dbPath, 'userDatabase.json'), initialUserDatabase);
 
@@ -190,7 +189,6 @@ async function initializeDatabase(guildId) {
             const configPath = path.join(dbPath, 'config.json');
             const config = await loadDatabase(configPath);
 
-            // Add default enabledDate if not present
             if (!config.streakSystem.enabledDate) {
                 config.streakSystem.enabledDate = new Date().toISOString();
                 await saveDatabase(configPath, config);
@@ -205,7 +203,6 @@ async function initializeDatabase(guildId) {
 }
 
 
-// Initialize the Discord client
 if (!clientId || !token) {
     console.error("Missing CLIENT_ID or TOKEN in .env file.");
     process.exit(1);
@@ -222,7 +219,7 @@ const client = new Client({
     partials: [Partials.Channel, Partials.Message, Partials.User],
 });
 
-// Load commands
+
 client.commands = new Collection();
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
@@ -245,7 +242,6 @@ for (const file of commandFiles) {
     }
 }
 
-// Register global commands
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
 
@@ -289,7 +285,7 @@ client.on('ready', async () => {
 
 client.on('interactionCreate', async interaction => {
     try {
-        await interactionHandler(client, interaction); // Call the interactionHandler
+        await interactionHandler(client, interaction);
     } catch (error) {
         console.error(`Error handling interaction: ${error}`);
     }
@@ -306,14 +302,12 @@ client.on('guildCreate', async (guild) => {
     }
 });
 
-// Helper function to calculate message similarity
 function getSimilarityScore(text1, text2) {
     const [shorter, longer] = text1.length < text2.length ? [text1, text2] : [text2, text1];
     const editDistance = levenshteinDistance(shorter, longer);
     return (longer.length - editDistance) / longer.length;
 }
 
-// Levenshtein distance for calculating message differences
 function levenshteinDistance(a, b) {
     const matrix = [];
     for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -332,26 +326,21 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-// Spam detection function
 function detectSpam(message, userId) {
     const currentTime = Date.now();
     const userData = userMessageData[userId] || { lastMessage: null, lastTime: currentTime };
 
-    // Check if the time difference between current and last message is less than 2.5 seconds
     const timeDifference = currentTime - userData.lastTime;
 
-    // Check similarity between current and last message
     const similarityScore = userData.lastMessage
         ? getSimilarityScore(userData.lastMessage, message.content)
         : 0;
 
-    // If the message is similar (>85% similarity) and sent within 2.5 seconds, flag as spam
     if (timeDifference < 2500 && similarityScore > 0.85) {
         console.log(`[SPAM DETECTION] Rapidly sent similar messages.`);
         return true;
     }
 
-    // Update user's last message and time
     userMessageData[userId] = {
         lastMessage: message.content,
         lastTime: currentTime
@@ -364,9 +353,8 @@ function migrateUserData(oldData) {
     const newData = {};
 
     for (const [userId, userData] of Object.entries(oldData)) {
-        const migratedData = { ...userData }; // Copy the old data as the base
+        const migratedData = { ...userData };
 
-        // Move 'xp' and 'level' fields into the new 'experience' object
         if (userData.xp !== undefined && userData.level !== undefined) {
             migratedData.experience = {
                 totalXp: userData.xp,
@@ -375,33 +363,29 @@ function migrateUserData(oldData) {
             delete migratedData.xp;
             delete migratedData.level;
         } else {
-            // Ensure experience object exists if missing
+
             migratedData.experience = userData.experience || {
                 totalXp: 0,
                 level: 0
             };
         }
 
-        // Handle the 'lastMessageTime' and 'lastMessageContent' migration to the 'lastMessage' field
         if (userData.lastMessageTime !== undefined && userData.lastMessageContent !== undefined) {
             migratedData.lastMessage = {
                 time: userData.lastMessageTime,
                 content: userData.lastMessageContent,
-                date: userData.lastActiveDate || new Date().toISOString().split('T')[0] // Fallback to today if missing
+                date: userData.lastActiveDate || new Date().toISOString().split('T')[0]
             };
             delete migratedData.lastMessageTime;
             delete migratedData.lastMessageContent;
             delete migratedData.lastActiveDate;
         } else {
-            // Ensure lastMessage object exists if missing
             migratedData.lastMessage = userData.lastMessage || {
                 time: Date.now(),
                 content: "",
                 date: new Date().toISOString().split('T')[0]
             };
         }
-
-        // Handle any additional field transformations if needed
 
         newData[userId] = migratedData;
     }
@@ -433,11 +417,9 @@ async function handleUserMessage(guildId, userId, channel, message) {
         const configPath = path.join(__dirname, '..', 'databases', guildId, 'config.json');
         const userDbPath = path.join(__dirname, '..', 'databases', guildId, 'userDatabase.json');
 
-        // Load the config and userDatabase
         const config = await loadDatabase(configPath);
         let userDatabase = await loadAndMigrateUserData(userDbPath);
 
-        // Initialize a user entry if it doesn't exist
         if (!userDatabase[userId]) {
             userDatabase[userId] = {
                 streak: 0,
@@ -457,7 +439,7 @@ async function handleUserMessage(guildId, userId, channel, message) {
                 messageHeatmap: [],
                 milestones: [],
                 rolesAchieved: [],
-                experience: { totalXp: 0, level: 0 }, // Initialize experience object
+                experience: { totalXp: 0, level: 0 },
                 boosters: 1,
                 lastMessage: { time: 0, content: '', date: null },
                 channelsParticipated: [],
@@ -470,14 +452,12 @@ async function handleUserMessage(guildId, userId, channel, message) {
         const streakCooldown = 3000;
         const lastStreakUpTime = streakCooldowns.get(userId) || 0;
 
-        // Update lastMessage field
         userDatabase[userId].lastMessage = {
             time: now,
             content: message.content,
             date: today
         };
 
-        // Track participation in channels
         if (!Array.isArray(userDatabase[userId].channelsParticipated)) {
             userDatabase[userId].channelsParticipated = [];
         }
@@ -485,7 +465,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
             userDatabase[userId].channelsParticipated.push(channel.id);
         }
 
-        // Track mentions and replies
         if (message.mentions?.users?.has(userId)) {
             userDatabase[userId].mentionsRepliesCount.mentions += 1;
         }
@@ -493,28 +472,23 @@ async function handleUserMessage(guildId, userId, channel, message) {
             userDatabase[userId].mentionsRepliesCount.replies += 1;
         }
 
-        // Check streak cooldown
         if (now - lastStreakUpTime < streakCooldown) {
             return;
         }
 
-        // Spam detection (add your own detectSpam logic here)
         if (detectSpam(message, userDatabase, userId)) {
             return;
         }
 
-        // Handle the level system (XP gain and level-up)
         if (config.levelSystem.enabled) {
             const xpGain = Math.max(0, config.levelSystem.xpPerMessage * (userDatabase[userId].boosters || 1));
             userDatabase[userId].experience.totalXp += xpGain;
             const xpRequired = Math.floor(100 * Math.pow(config.levelSystem.levelMultiplier, userDatabase[userId].experience.level));
 
-            // Handle leveling up
             if (userDatabase[userId].experience.totalXp >= xpRequired) {
                 userDatabase[userId].experience.level++;
                 userDatabase[userId].experience.totalXp -= xpRequired;
 
-                // Handle reward roles
                 const rewardRoleKey = `roleLevel${userDatabase[userId].experience.level}`;
                 const rewardRole = config.levelSystem[rewardRoleKey];
 
@@ -524,7 +498,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
                     await assignRole(guildId, userId, rewardRole);
                 }
 
-                // Level-up message
                 const levelUpChannelId = config.levelSystem.channelLevelUp || channel.id;
                 const levelUpChannel = channel.guild.channels.cache.get(levelUpChannelId) || channel;
 
@@ -534,7 +507,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
             }
         }
 
-        // Handle the streak system
         if (config.streakSystem.enabled) {
             if (userDatabase[userId].threshold > 0) {
                 userDatabase[userId].threshold -= 1;
@@ -548,7 +520,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
                     userDatabase[userId].highestStreak = userDatabase[userId].streak;
                 }
 
-                // Announce streak milestone
                 const streakChannelId = config.streakSystem.channelStreakOutput || channel.id;
                 const streakChannel = channel.guild.channels.cache.get(streakChannelId);
 
@@ -573,7 +544,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
                     }
                 }
 
-                // Create streak-up image using canvafy
                 const streakUpImage = await new canvafy.LevelUp()
                     .setAvatar(channel.guild.members.cache.get(userId).user.displayAvatarURL())
                     .setBackground(
@@ -610,11 +580,9 @@ async function handleUserMessage(guildId, userId, channel, message) {
             }
         }
 
-        // Message count tracking
         userDatabase[userId].messages += 1;
         userDatabase[userId].totalMessages += 1;
 
-        // Handle message heatmap
         if (!Array.isArray(userDatabase[userId].messageHeatmap)) {
             userDatabase[userId].messageHeatmap = [];
         }
@@ -626,7 +594,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
             userDatabase[userId].messageHeatmap.push({ date: today, messages: 1 });
         }
 
-        // Save the updated user database
         await saveDatabase(userDbPath, userDatabase);
 
     } catch (error) {
@@ -634,7 +601,6 @@ async function handleUserMessage(guildId, userId, channel, message) {
     }
 }
 
-// Daily reset logic
 async function resetDailyStreaks() {
     try {
         const guilds = client.guilds.cache.map(guild => guild.id);
@@ -693,7 +659,6 @@ async function resetDailyStreaks() {
     }
 }
 
-// Function to remove streak roles
 async function removeStreakRoles(guildId, userId, config, oldStreak) {
     try {
         const guild = client.guilds.cache.get(guildId);
@@ -752,7 +717,6 @@ async function removeStreakRoles(guildId, userId, config, oldStreak) {
     }
 }
 
-// Assign role to user
 async function assignRole(guildId, userId, roleId) {
     try {
         const guild = client.guilds.cache.get(guildId);
@@ -775,7 +739,6 @@ async function assignRole(guildId, userId, roleId) {
     return null;
 }
 
-// Flush cache to disk
 async function flushCacheToDisk() {
     try {
         for (const guildId in userMessageCache) {
@@ -833,7 +796,6 @@ function setLongTimeout(callback, duration) {
     }
 }
 
-// Schedule resets and reports
 function scheduleDailyReset() {
     cron.schedule('0 0 * * *', () => {
         console.log('Running daily streak reset at 12 AM');
@@ -944,13 +906,11 @@ async function announceMessageLeaders() {
                     console.error(`Failed to send message leaders to guild ${guildId}: ${error.message}`);
                 }
 
-                // Assign the Message Leader role to the top 5 users
                 const leaderRoleId = config.messageLeaderSystem.roleMessageLeader;
                 if (leaderRoleId) {
                     const leaderRole = client.guilds.cache.get(guildId).roles.cache.get(leaderRoleId);
 
                     if (leaderRole) {
-                        // Remove the role from all members to reset for new leaders
                         for (const member of leaderRole.members.values()) {
                             try {
                                 await member.roles.remove(leaderRole);
@@ -959,7 +919,6 @@ async function announceMessageLeaders() {
                             }
                         }
 
-                        // Add the role to the top 5 message leaders
                         for (let i = 0; i < 5; i++) {
                             const userId = messageLeaders[i]?.[0];
                             if (userId) {
@@ -977,7 +936,6 @@ async function announceMessageLeaders() {
                     console.warn(`No leader role configured for guild ${guildId}`);
                 }
 
-                // Update message counts and wins
                 for (let i = 0; i < 5; i++) {
                     const userId = messageLeaders[i]?.[0];
                     if (userId) {
@@ -985,7 +943,6 @@ async function announceMessageLeaders() {
                     }
                 }
 
-                // Reset message counts for all users
                 for (const userId in userDatabase) {
                     userDatabase[userId].messages = 0;
                 }

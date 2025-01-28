@@ -14,30 +14,25 @@ module.exports = {
 
     async execute(interaction) {
         const { guild, user, client } = interaction;
-        const developerChannelId = '1280248284358774784';  // Developer channel ID
-        const developerGuildId = '1233740086839869501';    // Developer guild ID
+        const developerChannelId = '1280248284358774784';
+        const developerGuildId = '1233740086839869501';
 
         try {
-            // Determine target user
             const targetUser = interaction.options.getUser('target') || user;
             const member = guild.members.cache.get(targetUser.id);
 
-            // Fetch necessary data
             const guildConfig = await getConfigForGuild(guild.id);
             const channelPermissions = interaction.channel.permissionsFor(client.user);
             const botMember = await guild.members.fetch(client.user.id);
             const botPermissions = botMember.permissions;
 
-            // Load user database
             let userDatabase = await loadUserDatabase(guild.id);
 
-            // Log specific user data
             const userData = userDatabase[targetUser.id] || {};
             if (!userData) {
                 console.warn(`No data found for user ID ${targetUser.id} in guild ${guild.id}.`);
             }
 
-            // Define required permissions for the bot
             const requiredPermissions = [
                 PermissionsBitField.Flags.SendMessages,
                 PermissionsBitField.Flags.EmbedLinks,
@@ -48,11 +43,9 @@ module.exports = {
                 PermissionsBitField.Flags.ViewChannel,
             ];
 
-            // Prepare the check and cross emojis
             const check = '✅';
             const cross = '❌';
 
-            // Build the permission checks
             const botPermsDisplay = requiredPermissions.map(perm => {
                 return botPermissions.has(perm) ? `${check} ${perm.toString().replace(/_/g, ' ')}` : `${cross} ${perm.toString().replace(/_/g, ' ')}`;
             }).join('\n');
@@ -61,7 +54,6 @@ module.exports = {
                 return channelPermissions.has(perm) ? `${check} ${perm.toString().replace(/_/g, ' ')}` : `${cross} ${perm.toString().replace(/_/g, ' ')}`;
             }).join('\n');
 
-            // Filter out less relevant data
             const filteredUserData = {
                 streak: userData.streak,
                 highestStreak: userData.highestStreak,
@@ -77,7 +69,6 @@ module.exports = {
                 boosters: userData.boosters,
             };
 
-            // Create the embed for developers
             const devEmbed = new EmbedBuilder()
                 .setColor('#FF0000')
                 .setTitle('Debug Information')
@@ -92,12 +83,10 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            // Send the debug information to the developer channel (async, unrelated to interaction)
             const devGuild = client.guilds.cache.get(developerGuildId);
             const devChannel = devGuild.channels.cache.get(developerChannelId);
             const debugMessage = await devChannel.send({ embeds: [devEmbed] });
 
-            // Create the embed for the user
             const userEmbed = new EmbedBuilder()
                 .setColor('#00FF00')
                 .setTitle('Debug Information Sent')
@@ -111,7 +100,6 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            // Reply to the interaction once (ephemeral message to the user)
             if (!interaction.replied && !interaction.deferred) {
                 await interaction.reply({ embeds: [userEmbed], ephemeral: true });
             }
@@ -124,22 +112,20 @@ module.exports = {
     },
 };
 
-// Helper function to get the guild configuration
 async function getConfigForGuild(guildId) {
     const configPath = path.join(__dirname, '..', '..', 'databases', guildId, 'config.json');
     if (fs.existsSync(configPath)) {
         const fileContent = await fs.promises.readFile(configPath, 'utf8');
         return JSON.parse(fileContent);
     }
-    return {}; // Return an empty object if the config does not exist
+    return {};
 }
 
-// Helper function to load the user database
 async function loadUserDatabase(guildId) {
     const userDbPath = path.join(__dirname, '..', '..', 'databases', guildId, 'userDatabase.json');
     if (fs.existsSync(userDbPath)) {
         const fileContent = await fs.promises.readFile(userDbPath, 'utf8');
         return JSON.parse(fileContent);
     }
-    return {}; // Return an empty object if the user database does not exist
+    return {};
 }
